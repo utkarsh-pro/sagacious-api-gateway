@@ -1,0 +1,20 @@
+{
+  "name": "api-gateway",
+  "version": "0.0.1",
+  "description": "Minimal API gateway for sagacious.dev",
+  "main": "build/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github.com/utkarsh-pro/sagacious-api-gateway"
+  },
+  "author": "Utkarsh Srivastava",
+  "license": "MIT",
+  "devDependencies": {
+    "node-ts": "^5.0.5",
+    "nodemon": "^2.0.3",
+    "typescript": "^3.8.3"
+  }
+}
