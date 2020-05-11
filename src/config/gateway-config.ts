@@ -1,31 +1,18 @@
-export type AccessLevel = 'admin' | 'open';
-export type HTTPMethod = 'POST' | 'GET' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS';
+/**
+ * The configuration is loaded based on the environment
+ * @author Utkarsh Srivastava <utkarsh@sagacious.dev>
+ */
 
-export interface IRouteConfig {
-    route: string;
-    proxyPath: string;
+// To read the config file
+import { readFileSync } from 'fs'
+import { join } from 'path'
+import { IGatewayConfig } from './gateway-interface'
 
-    // Defaults to 'open'
-    accessType?: AccessLevel;
+const file = process.env.NODE_ENV === "production" ? "config.json" : "dummy-config.json";
 
-    // Defaults to ['GET', 'OPTIONS'] if accessType is 'open'
-    // Defaults to ['OPTIONS'] if accessType is 'admin'
-    allowedMethods?: Array<HTTPMethod>;
-}
+// ================================== CONFIGURATION =======================================
 
-export interface IExceptionRoute {
-    route: string;
-    method: HTTPMethod;
-    accessType?: AccessLevel;
-}
-
-export interface IGatewayConfig {
-    routes: Array<IRouteConfig>;
-}
-
-
-const gatewayConfig: IGatewayConfig = {
-    routes: []
-}
+// Read the file
+const gatewayConfig: IGatewayConfig = JSON.parse(readFileSync(join(__dirname, file), { encoding: "UTF-8" }))
 
 export default gatewayConfig
