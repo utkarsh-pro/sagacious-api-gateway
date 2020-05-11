@@ -1,0 +1,14 @@
+{
+    "routes": [
+        {
+            "path": "/beta/api/...",
+            "proxyPath": "http://something:9000",
+            "accessType": "admin",
+            "allowedMethods": [
+                "GET",
+                "POST",
+                "OPTIONS"
+            ]
+        }
+    ]
+}
