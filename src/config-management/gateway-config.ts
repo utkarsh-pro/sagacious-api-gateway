@@ -8,11 +8,11 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 import { IGatewayConfig } from './gateway-interface'
 
-const file = process.env.NODE_ENV === "production" ? "config.json" : "dummy-config.json";
+const file = process.env.NODE_ENV === "production" ? "config.production.json" : "config.development.json";
 
 // ================================== CONFIGURATION =======================================
 
 // Read the file
-const gatewayConfig: IGatewayConfig = JSON.parse(readFileSync(join(__dirname, file), { encoding: "UTF-8" }))
+const gatewayConfig: IGatewayConfig = JSON.parse(readFileSync(join(__dirname, "config", file), { encoding: "UTF-8" }))
 
 export default gatewayConfig
