@@ -1,0 +1,6 @@
+node_modules
+build
+.git
+.gitignore
+config.production.json
+config.development.json
