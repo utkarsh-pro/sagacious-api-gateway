@@ -1,4 +1,12 @@
 import config from './config-management/gateway-config'
+import cookieParser from 'cookie-parser'
+import Gateway from './Gateway/Gateway'
 
-console.log(process.env.NODE_ENV)
-console.log(config)
+const gateway = new Gateway(config);
+
+const app = gateway.init();
+
+app.use(cookieParser())
+gateway.setup()
+
+const server = gateway.listen(5000, () => console.log("ff"))
