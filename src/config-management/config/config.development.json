@@ -1,7 +1,7 @@
 {
     "routes": [
         {
-            "path": "/beta/api/...",
+            "route": "/beta/api/...",
             "proxyPath": "http://something:9000",
             "accessType": "admin",
             "allowedMethods": [
