@@ -9,4 +9,4 @@ const app = gateway.init();
 app.use(cookieParser())
 gateway.setup()
 
-const server = gateway.listen(5000, () => console.log("ff"))
+gateway.listen(5000, () => console.log("Server running on PORT", 5000))
