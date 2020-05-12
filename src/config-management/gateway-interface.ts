@@ -16,6 +16,8 @@ export interface IRouteConfig {
     // Defaults to ['GET', 'OPTIONS'] if accessType is 'open'
     // Defaults to ['OPTIONS'] if accessType is 'admin'
     allowedMethods?: Array<HTTPMethod>;
+
+    isWebsocket?: boolean;
 }
 
 export interface IExceptionRoute {
