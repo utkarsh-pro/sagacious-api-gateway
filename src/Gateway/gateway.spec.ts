@@ -23,12 +23,6 @@ describe('Gateway class', () => {
         gateway = new Gateway(config)
     })
 
-    it("should return a http server", () => {
-        const server = gateway.listen(5000)
-        expect(server).to.be.instanceOf(Server)
-        server.close()
-    })
-
     it("should load new config without error", () => {
         const newConfig = {
             routes: []
@@ -44,6 +38,12 @@ describe('Gateway class', () => {
             routes: []
         }
         expect(gateway.loadConfig.bind(gateway, newConfig)).to.throw("Cannot load config after running setup")
+    })
+
+    it("should return a http server", () => {
+        const server = gateway.listen(5000)
+        expect(server).to.be.instanceOf(Server)
+        server.close()
     })
 
     it("should throw an error", () => {
