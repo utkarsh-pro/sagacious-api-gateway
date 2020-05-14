@@ -7,3 +7,4 @@ src/config-management/keys/production
 config.production.json
 config.development.json
 testServer.js
+*.http
