@@ -5,5 +5,10 @@
             "proxyPath": "http://localhost:9000",
             "accessType": "open"
         }
-    ]
+    ],
+    "jwtSignOptions": {
+        "issuer": "Sagacious Dev",
+        "audience": "https://sagacious.dev",
+        "expiresIn": "30m"
+    }
 }

@@ -28,4 +28,11 @@ export interface IExceptionRoute {
 
 export interface IGatewayConfig {
     routes: Array<IRouteConfig>;
+    jwtSignOptions: {
+        issuer?: string;
+        subject?: string;
+        audience?: string;
+        expiresIn?: string;
+        algorithm?: Array<string>;
+    }
 }
