@@ -1,14 +1,9 @@
 {
     "routes": [
         {
-            "route": "/beta/api/...",
-            "proxyPath": "http://something:9000",
-            "accessType": "admin",
-            "allowedMethods": [
-                "GET",
-                "POST",
-                "OPTIONS"
-            ]
+            "route": "/api",
+            "proxyPath": "http://localhost:9000",
+            "accessType": "open"
         }
     ]
 }
