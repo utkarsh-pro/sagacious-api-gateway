@@ -239,7 +239,7 @@ class Gateway implements IGateway {
      */
     private extractToken(req: Request): string | undefined {
         // Look for token in Authentication header
-        const bearer = req.get("Authentication")
+        const bearer = req.get("Authorization")
         let token = bearer && bearer.split(" ")[1]; // Bearer <TOKEN HERE>
 
         // Fallback to x-auth-token header
