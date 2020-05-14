@@ -1,8 +1,10 @@
-import express, { Express, NextFunction } from 'express'
+import express, { Express, NextFunction, Request, Response, json } from 'express'
 import { createProxyMiddleware, RequestHandler } from "http-proxy-middleware";
-
-import { IGatewayConfig, IRouteConfig } from '../config-management/gateway-interface';
 import { Server } from 'http';
+import { verify } from 'jsonwebtoken'
+
+import { IGatewayConfig, IRouteConfig, HTTPMethod, AccessLevel } from '../config-management/gateway-interface';
+import { publicKey } from '../config-management/gateway-key'
 
 // ============================= INTERFACES AND TYPES =================================
 /**
@@ -15,13 +17,25 @@ export interface IGateway {
     listen: (port: number, cb: (...args: any) => void) => Server;
 }
 
-type ExpressMiddleware = (req: Express.Request, res: Express.Response, next: NextFunction) => void;
+/**
+ * Defines the interface for the user payload of the token
+ */
+export interface IUser {
+    username: string;
+    name: string;
+    id: string;
+    email: string;
+    role: AccessLevel;
+    service: string;
+}
+
+type ExpressMiddleware = (req: Request, res: Response, next: NextFunction) => void;
 type Path = string;
 
 // ============================= GATEWAY IMPLEMENTATION ================================
 /**
  * Gateway creates a wrapper around express to
- * enable proxying based on the configuration provided
+ * enable proxying based on the configuration provided.
  * It also supports proxy for websocket based connections
  */
 class Gateway implements IGateway {
@@ -37,6 +51,15 @@ class Gateway implements IGateway {
      * http-proxy-middleware to support auto connection upgradations.
      */
     private websocketMappings = new Map<Path, RequestHandler>()
+
+    /**
+     * Default allowed http methods based on access level
+     */
+    private defaultAllowedMethods: { open: HTTPMethod[], admin: HTTPMethod[] } = {
+        open: ['GET', 'OPTIONS'],
+        admin: ['OPTIONS']
+    }
+
 
     /**
      * For internal use only.
@@ -64,6 +87,10 @@ class Gateway implements IGateway {
      * middlewares are setup by the user
      */
     setup() {
+        // Setup verify middleware on all routes
+        this.express.use(this.verify.bind(this))
+
+        // Setup other middlewares on the given routes
         this.config.routes.forEach(config => {
             this.express.use(config.route, this.authorizeAndProxy(config))
         })
@@ -88,7 +115,7 @@ class Gateway implements IGateway {
     }
 
     /**
-     * Enables websocker based proxy
+     * Enables websocket based proxy
      * @param server 
      */
     enableWSSupport(server: Server): Server {
@@ -105,11 +132,29 @@ class Gateway implements IGateway {
     }
 
     private authorizeAndProxy(config: IRouteConfig): Array<ExpressMiddleware> {
-        return [this.authorize, this.proxy(config)]
+        return [this.authorize(config), this.proxy(config)]
     }
 
-    private authorize(req: Express.Request, res: Express.Response, next: NextFunction) {
-        next()
+    private authorize(config: IRouteConfig): ExpressMiddleware {
+        const middleware = (req: Request, res: Response, next: NextFunction) => {
+            const user = req.get("user");
+            const methods = config.allowedMethods || this.defaultAllowedMethods[config.accessType || "open"]
+
+            if (config.accessType === "open") {
+                if (user || methods.includes(req.method as HTTPMethod)) next()
+                else res.sendStatus(401);
+            } else if (config.accessType === "admin") {
+                // Parse the user object
+                const parsedUser = user && JSON.parse(user) as IUser
+
+                if ((parsedUser && parsedUser.role === "admin") || methods.includes(req.method as HTTPMethod)) {
+                    next()
+                }
+                else res.sendStatus(401);
+            }
+        }
+
+        return middleware
     }
 
     private proxy(config: IRouteConfig) {
@@ -118,12 +163,58 @@ class Gateway implements IGateway {
             this.websocketMappings.set(config.route, middleware)
             return middleware
         } else {
-            return createProxyMiddleware(config.route, { target: config.proxyPath, onProxyReq: this.onProxyReq })
+            return createProxyMiddleware(config.route, { target: config.proxyPath })
         }
     }
 
-    private onProxyReq(proxyReq: any, req: any, res: any) {
-        proxyReq.setHeader('user', JSON.parse(req.verified))
+    /**
+     * Verifies if the given token is valid JWT or not.
+     * Also sets up the header 'user' with the decoded JWT. No header
+     * is set if the token is invalid
+     * @param req {Request}
+     * @param res {Response}
+     * @param next {NextFunction}
+     */
+    private verify(req: Request, res: Response, next: NextFunction) {
+        const token = this.extractToken(req)
+        if (token) {
+            verify(token, publicKey, (err, decoded) => {
+                if (err) {
+                    res.sendStatus(401)
+                    return
+                }
+
+                if (decoded) {
+                    req.headers["user"] = JSON.stringify(decoded)
+                } else {
+                    req.headers["user"] = undefined;
+                }
+
+                next()
+            })
+        }
+
+        res.status(401).json({ err: "no token was provided" })
+    }
+
+    /**
+     * Extract the token from the requeest body
+     * Looks into 'Authentication', 'x-auth-token' headers and then into 'token'
+     * query parameter as a fallback
+     * @param req {Request}
+     */
+    private extractToken(req: Request): string | undefined {
+        // Look for token in Authentication header
+        const bearer = req.get("Authentication")
+        let token = bearer && bearer.split(" ")[1]; // Bearer <TOKEN HERE>
+
+        // Fallback to x-auth-token header
+        if (!token) token = req.get("x-auth-token")
+
+        // Fallback to uri
+        if (!token) token = req.query.token as string
+
+        return token;
     }
 }
 
