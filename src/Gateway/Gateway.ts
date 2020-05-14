@@ -227,8 +227,7 @@ class Gateway implements IGateway {
                 next()
             })
         }
-
-        res.status(401).json({ err: "no token was provided" })
+        else res.status(401).json({ err: "no token was provided" })
     }
 
     /**
