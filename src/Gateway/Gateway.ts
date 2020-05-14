@@ -160,6 +160,10 @@ class Gateway implements IGateway {
         return [this.authorize(config), this.proxy(config)]
     }
 
+    /**
+     * Creates a middleware for authorizing the requests
+     * @param config {IRouteConfig}
+     */
     private authorize(config: IRouteConfig): ExpressMiddleware {
         const middleware = (req: Request, res: Response, next: NextFunction) => {
             const user = req.get("user");
@@ -182,6 +186,11 @@ class Gateway implements IGateway {
         return middleware
     }
 
+    /**
+     * Calls createProxyMiddleware based on the type of proxy (http, websocket).
+     * Also holds a record to the websocket route in websocketMappings
+     * @param config 
+     */
     private proxy(config: IRouteConfig) {
         if (config.isWebsocket) {
             const middleware = createProxyMiddleware(config.route, {});
