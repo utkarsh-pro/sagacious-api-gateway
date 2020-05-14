@@ -3,7 +3,6 @@ import chai from 'chai'
 
 import Gateway from './Gateway'
 import { IGatewayConfig } from '../config-management/gateway-interface'
-import { Express } from 'express'
 import { Server } from 'http'
 
 const expect = chai.expect
@@ -18,14 +17,16 @@ describe('Gateway class', () => {
                     proxyPath: "http://localhost:9000",
                     accessType: "open"
                 }
-            ]
+            ],
+            jwtSignOptions: {}
         }
         gateway = new Gateway(config)
     })
 
     it("should load new config without error", () => {
-        const newConfig = {
-            routes: []
+        const newConfig: IGatewayConfig = {
+            routes: [],
+            jwtSignOptions: {}
         }
         const config = gateway.loadConfig(newConfig)
 
@@ -35,7 +36,8 @@ describe('Gateway class', () => {
     it("should throw error when loading new config", () => {
         gateway.setup();
         const newConfig = {
-            routes: []
+            routes: [],
+            jwtSignOptions: {}
         }
         expect(gateway.loadConfig.bind(gateway, newConfig)).to.throw("Cannot load config after running setup")
     })
