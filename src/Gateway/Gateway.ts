@@ -74,7 +74,12 @@ class Gateway implements IGateway {
      * @param port 
      * @param cb 
      */
-    listen(...args: any[]) {
+    listen(port: number, hostname: string, backlog: number, callback?: (...args: any[]) => void): Server;
+    listen(port: number, callback?: (...args: any[]) => void): Server;
+    listen(callback?: (...args: any[]) => void): Server;
+    listen(path: string, callback?: (...args: any[]) => void): Server;
+    listen(handle: any, listeningListener?: () => void): Server;
+    listen(...args: any[]): Server {
         const server = this.express.listen(...args)
         this.enableWSSupport(server)
         this.usingExpressListener = false;
