@@ -73,7 +73,6 @@ class Gateway implements IGateway {
      */
     private usingExpressListener: boolean = true;
 
-
     constructor(private config: IGatewayConfig) {
         this.express = express();
     }
@@ -211,10 +210,31 @@ class Gateway implements IGateway {
      */
     private verify(req: Request, res: Response, next: NextFunction) {
         const token = this.extractToken(req)
+        const client = this.extractClient(req)
+
+        // If not client id was provided
+        if (!client) {
+            res.sendStatus(401)
+            return
+        }
+
+        // Modified JWT SignOptions
+        // It overrights algorithm to RS256 as that's the only 
+        // algorthim supported. client claim should be passed
+        // Along with the request to verify the claim
+        const jwtSignOptions = {
+            ...this.config.jwtSignOptions,
+            subject: client,
+            algorithm: ["RS256"]
+        }
+
         if (token) {
-            verify(token, publicKey, (err, decoded) => {
+            verify(token, publicKey, jwtSignOptions, (err, decoded) => {
                 if (err) {
-                    res.sendStatus(401)
+                    let status = 401
+                    if (err.message.startsWith("jwt subject invalid"))
+                        status = 403;
+                    res.sendStatus(status)
                     return
                 }
 
@@ -248,6 +268,15 @@ class Gateway implements IGateway {
         if (!token) token = req.query.token as string
 
         return token;
+    }
+
+    /**
+     * Extracts the client id from the header
+     * @param req {Request}
+     */
+    private extractClient(req: Request): string | undefined {
+        // Extract subject from the x-auth-subject header
+        return req.get("x-auth-client")
     }
 }
 
