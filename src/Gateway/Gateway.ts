@@ -14,7 +14,8 @@ export interface IGateway {
     express: Express;
     init: () => Express;
     setup: () => void;
-    listen: (port: number, cb: (...args: any) => void) => Server;
+    listen: (...args: any[]) => Server;
+    loadConfig: (config: IGatewayConfig) => IGatewayConfig;
 }
 
 /**
@@ -60,12 +61,18 @@ class Gateway implements IGateway {
         admin: ['OPTIONS']
     }
 
+    /**
+     * Keeps a record if the setup has been initialized
+     * using the setup method
+     */
+    private setupInitialized: boolean = false;
 
     /**
      * For internal use only.
      * Checks if the express server is being used.
      */
     private usingExpressListener: boolean = true;
+
 
     constructor(private config: IGatewayConfig) {
         this.express = express();
@@ -87,6 +94,9 @@ class Gateway implements IGateway {
      * middlewares are setup by the user
      */
     setup() {
+        // Set initialized to true
+        this.setupInitialized = true;
+
         // Setup verify middleware on all routes
         this.express.use(this.verify.bind(this))
 
@@ -131,6 +141,21 @@ class Gateway implements IGateway {
         return server
     }
 
+    /**
+     * Loads new configuration
+     * @param config 
+     * @returns {IGatewayConfig}
+     */
+    loadConfig(config: IGatewayConfig): IGatewayConfig {
+        if (this.setupInitialized) throw Error("Cannot load config after running setup");
+        this.config = config;
+        return this.config;
+    }
+
+    /**
+     * Combines the authorization and proxying middlewares
+     * @param config 
+     */
     private authorizeAndProxy(config: IRouteConfig): Array<ExpressMiddleware> {
         return [this.authorize(config), this.proxy(config)]
     }

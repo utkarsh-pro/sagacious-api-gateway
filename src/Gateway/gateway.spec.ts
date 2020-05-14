@@ -14,9 +14,9 @@ describe('Gateway class', () => {
         const config: IGatewayConfig = {
             routes: [
                 {
-                    route: "/v1/database/",
-                    proxyPath: "http://database-service:5000",
-                    accessType: "admin"
+                    route: "/api/v1",
+                    proxyPath: "http://localhost:9000",
+                    accessType: "open"
                 }
             ]
         }
@@ -27,6 +27,23 @@ describe('Gateway class', () => {
         const server = gateway.listen(5000)
         expect(server).to.be.instanceOf(Server)
         server.close()
+    })
+
+    it("should load new config without error", () => {
+        const newConfig = {
+            routes: []
+        }
+        const config = gateway.loadConfig(newConfig)
+
+        expect(config).to.be.deep.equal(newConfig);
+    })
+
+    it("should throw error when loading new config", () => {
+        gateway.setup();
+        const newConfig = {
+            routes: []
+        }
+        expect(gateway.loadConfig.bind(gateway, newConfig)).to.throw("Cannot load config after running setup")
     })
 
     it("should throw an error", () => {
