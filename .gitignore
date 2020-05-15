@@ -3,5 +3,4 @@ build
 src/config-management/keys/production
 
 config.production.json
-testServer.js
 *.http
