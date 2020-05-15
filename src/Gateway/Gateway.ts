@@ -1,10 +1,10 @@
-import express, { Express, NextFunction, Request, Response, json } from 'express'
+import express, { Express, NextFunction, Request, Response } from 'express'
 import { createProxyMiddleware, RequestHandler } from "http-proxy-middleware";
 import { Server } from 'http';
 import { verify } from 'jsonwebtoken'
 
 import { IGatewayConfig, IRouteConfig, HTTPMethod, AccessLevel } from '../config-management/gateway-interface';
-import { publicKey } from '../config-management/gateway-key'
+import { publicKey } from '../key-management/gateway-key'
 
 // ============================= INTERFACES AND TYPES =================================
 /**
@@ -26,8 +26,8 @@ export interface IUser {
     name: string;
     id: string;
     email: string;
-    role: AccessLevel;
-    service: string;
+    accessLevel: AccessLevel;
+    roles: Array<string>;
 }
 
 type ExpressMiddleware = (req: Request, res: Response, next: NextFunction) => void;
@@ -108,7 +108,7 @@ class Gateway implements IGateway {
     /**
      * Use this method to enable auto support for websocket proxy
      * @param port 
-     * @param cb 
+     * @param cb
      */
     listen(port: number, hostname: string, backlog: number, callback?: (...args: any[]) => void): Server;
     listen(port: number, callback?: (...args: any[]) => void): Server;
@@ -175,7 +175,7 @@ class Gateway implements IGateway {
                 // Parse the user object
                 const parsedUser = user && JSON.parse(user) as IUser
 
-                if ((parsedUser && parsedUser.role === "admin") || methods.includes(req.method as HTTPMethod)) {
+                if ((parsedUser && parsedUser.accessLevel === "admin") || methods.includes(req.method as HTTPMethod)) {
                     next()
                 }
                 else res.sendStatus(401);

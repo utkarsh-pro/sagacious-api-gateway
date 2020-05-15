@@ -2,35 +2,43 @@ import 'mocha'
 import chai from 'chai'
 import chaiHTTP from 'chai-http'
 import { fork } from 'child_process'
-import path from 'path'
+import path, { join } from 'path'
 
 import { sign } from 'jsonwebtoken'
 import app from '../index'
 import { IUser } from './Gateway'
-import { privateKey } from '../config-management/gateway-key'
 import config from '../config-management/gateway-config'
+import { readFileSync } from 'fs'
 
+// Use expect for assertions
 const expect = chai.expect
+// Use chai-http for testing routes
 chai.use(chaiHTTP)
 
+// Setup dummy users for testing
 const DummyUser: IUser = {
     username: "utkarsh",
     name: "Utkarsh Srivastava",
     id: "rwerwjkfhwer32089230",
     email: "test@test.com",
-    role: "open",
-    service: "api"
+    roles: ["RETREIVE_INFO"],
+    accessLevel: "open"
 }
 
+// Dummy JWT signoptions
 const jwtSignOptions = {
     ...config.jwtSignOptions,
     algorithm: "RS256",
     subject: DummyUser.id
 }
 
+// Get the development private sign key
+const privateKey = readFileSync(join(__dirname, "..", "key-management", "keys", "development", "private.key"), 'utf-8')
+
 // Spin the test server
 const proc = fork(path.join(__dirname, "dummy-server.js"))
 
+// Generate temporary token
 const token = sign(DummyUser, privateKey, { ...jwtSignOptions, algorithm: "RS256" })
 
 describe('Proxy routes integration test', () => {
