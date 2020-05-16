@@ -27,19 +27,22 @@ const DummyUser: IUser = {
 
 // Dummy JWT signoptions
 const jwtSignOptions = {
-    ...config.jwtSignOptions,
+    ...config.jwtVerifyOptions,
     algorithm: "RS256",
     subject: DummyUser.id
 }
 
+// Remove 'algorithms' from the options
+delete jwtSignOptions.algorithms
+
 // Get the development private sign key
 const privateKey = readFileSync(join(__dirname, "..", "key-management", "keys", "development", "private.key"), 'utf-8')
 
-// Spin the test server
-const proc = fork(path.join(__dirname, "dummy-server.js"))
-
 // Generate temporary token
 const token = sign(DummyUser, privateKey, { ...jwtSignOptions, algorithm: "RS256" })
+
+// Spin the test server
+const proc = fork(path.join(__dirname, "dummy-server.js"))
 
 describe('Proxy routes integration test', () => {
     describe("GET /api", () => {
@@ -58,7 +61,7 @@ describe('Proxy routes integration test', () => {
                 const res = await chai.request(app)
                     .get("/api")
                     .set("Authorization", `Bearer ${token}`)
-                    .set("x-auth-client", DummyUser.id)
+                    .set("x-auth-subject", DummyUser.id)
                     .send()
                 expect(res).to.have.status(200)
             } catch (error) {
@@ -71,7 +74,7 @@ describe('Proxy routes integration test', () => {
                 const res = await chai.request(app)
                     .get("/api")
                     .set("x-auth-token", `${token}`)
-                    .set("x-auth-client", DummyUser.id)
+                    .set("x-auth-subject", DummyUser.id)
                     .send()
                 expect(res).to.have.status(200)
             } catch (error) {
@@ -83,7 +86,7 @@ describe('Proxy routes integration test', () => {
             try {
                 const res = await chai.request(app)
                     .get("/api?token=" + token)
-                    .set("x-auth-client", DummyUser.id)
+                    .set("x-auth-subject", DummyUser.id)
                     .send()
                 expect(res).to.have.status(200)
             } catch (error) {
@@ -91,7 +94,7 @@ describe('Proxy routes integration test', () => {
             }
         })
 
-        it("should send status 401 when x-auth-client is not passed", async () => {
+        it("should send status 401 when x-auth-subject is not passed", async () => {
             try {
                 const res = await chai.request(app).get("/api").set("Authorization", `Bearer ${token}`).send()
                 expect(res).to.have.status(401)
@@ -100,12 +103,12 @@ describe('Proxy routes integration test', () => {
             }
         })
 
-        it("should send status 403 when x-auth-client is invalid", async () => {
+        it("should send status 403 when x-auth-subject is invalid", async () => {
             try {
                 const res = await chai.request(app)
                     .get("/api")
                     .set("Authorization", `Bearer ${token}`)
-                    .set("x-auth-client", "random")
+                    .set("x-auth-subject", "random")
                     .send()
                 expect(res).to.have.status(403)
             } catch (error) {

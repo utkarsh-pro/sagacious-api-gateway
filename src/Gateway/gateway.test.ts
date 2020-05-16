@@ -18,40 +18,23 @@ describe('Gateway class', () => {
                     accessType: "open"
                 }
             ],
-            jwtSignOptions: {}
+            jwtVerifyOptions: {}
         }
         gateway = new Gateway(config)
     })
 
-    it("should load new config without error", () => {
-        const newConfig: IGatewayConfig = {
-            routes: [],
-            jwtSignOptions: {}
-        }
-        const config = gateway.loadConfig(newConfig)
+    describe("listen method", () => {
+        it("should return a http server", () => {
+            const server = gateway.listen(5000)
+            expect(server).to.be.instanceOf(Server)
+            server.close()
+        })
 
-        expect(config).to.be.deep.equal(newConfig);
-    })
+        it("should throw an error", () => {
+            const server = gateway.listen(5000)
 
-    it("should throw error when loading new config", () => {
-        gateway.setup();
-        const newConfig = {
-            routes: [],
-            jwtSignOptions: {}
-        }
-        expect(gateway.loadConfig.bind(gateway, newConfig)).to.throw("Cannot load config after running setup")
-    })
-
-    it("should return a http server", () => {
-        const server = gateway.listen(5000)
-        expect(server).to.be.instanceOf(Server)
-        server.close()
-    })
-
-    it("should throw an error", () => {
-        const server = gateway.listen(5000)
-
-        expect(gateway.enableWSSupport.bind(gateway, server)).to.throw("Cannot use this method if using gateway 'listen' method")
-        server.close()
+            expect(gateway.enableWSSupport.bind(gateway, server)).to.throw("Cannot use this method if using gateway 'listen' method")
+            server.close()
+        })
     })
 })

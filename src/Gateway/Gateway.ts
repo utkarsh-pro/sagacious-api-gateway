@@ -1,10 +1,9 @@
 import express, { Express, NextFunction, Request, Response } from 'express'
 import { createProxyMiddleware, RequestHandler } from "http-proxy-middleware";
 import { Server } from 'http';
-import { verify } from 'jsonwebtoken'
 
 import { IGatewayConfig, IRouteConfig, HTTPMethod, AccessLevel } from '../config-management/gateway-interface';
-import { publicKey } from '../key-management/gateway-key'
+import { JWTManager } from '../JWTManager/JWTManager';
 
 // ============================= INTERFACES AND TYPES =================================
 /**
@@ -15,7 +14,6 @@ export interface IGateway {
     init: () => Express;
     setup: () => void;
     listen: (...args: any[]) => Server;
-    loadConfig: (config: IGatewayConfig) => IGatewayConfig;
 }
 
 /**
@@ -47,6 +45,8 @@ class Gateway implements IGateway {
      */
     public express: Express;
 
+    public jwtManager: JWTManager;
+
     /**
      * Websocker mappings are stored to hold reference to the 
      * http-proxy-middleware to support auto connection upgradations.
@@ -62,12 +62,6 @@ class Gateway implements IGateway {
     }
 
     /**
-     * Keeps a record if the setup has been initialized
-     * using the setup method
-     */
-    private setupInitialized: boolean = false;
-
-    /**
      * For internal use only.
      * Checks if the express server is being used.
      */
@@ -75,6 +69,7 @@ class Gateway implements IGateway {
 
     constructor(private config: IGatewayConfig) {
         this.express = express();
+        this.jwtManager = new JWTManager(config.jwtVerifyOptions)
     }
 
     /**
@@ -82,6 +77,7 @@ class Gateway implements IGateway {
      * of express. This method will setup multiple express middlewares,
      * number of middlewares would depend upon the number of routes 
      * provided in the gateway configuration.
+     * @author Utkarsh Srivastava <utkarsh@sagacious.dev>
      */
     init(): Express {
         return this.express;
@@ -91,11 +87,9 @@ class Gateway implements IGateway {
      * Sets up the middleware into the express. 
      * This should be invoked only after all the custom
      * middlewares are setup by the user
+     * @author Utkarsh Srivastava <utkarsh@sagacious.dev>
      */
     setup() {
-        // Set initialized to true
-        this.setupInitialized = true;
-
         // Setup verify middleware on all routes
         this.express.use(this.verify.bind(this))
 
@@ -109,6 +103,7 @@ class Gateway implements IGateway {
      * Use this method to enable auto support for websocket proxy
      * @param port 
      * @param cb
+     * @author Utkarsh Srivastava <utkarsh@sagacious.dev>
      */
     listen(port: number, hostname: string, backlog: number, callback?: (...args: any[]) => void): Server;
     listen(port: number, callback?: (...args: any[]) => void): Server;
@@ -126,6 +121,7 @@ class Gateway implements IGateway {
     /**
      * Enables websocket based proxy
      * @param server 
+     * @author Utkarsh Srivastava <utkarsh@sagacious.dev>
      */
     enableWSSupport(server: Server): Server {
         if (!this.usingExpressListener) throw Error("Cannot use this method if using gateway 'listen' method")
@@ -141,19 +137,9 @@ class Gateway implements IGateway {
     }
 
     /**
-     * Loads new configuration
-     * @param config 
-     * @returns {IGatewayConfig}
-     */
-    loadConfig(config: IGatewayConfig): IGatewayConfig {
-        if (this.setupInitialized) throw Error("Cannot load config after running setup");
-        this.config = config;
-        return this.config;
-    }
-
-    /**
      * Combines the authorization and proxying middlewares
      * @param config 
+     * @author Utkarsh Srivastava <utkarsh@sagacious.dev>
      */
     private authorizeAndProxy(config: IRouteConfig): Array<ExpressMiddleware> {
         return [this.authorize(config), this.proxy(config)]
@@ -162,6 +148,7 @@ class Gateway implements IGateway {
     /**
      * Creates a middleware for authorizing the requests
      * @param config {IRouteConfig}
+     * @author Utkarsh Srivastava <utkarsh@sagacious.dev>
      */
     private authorize(config: IRouteConfig): ExpressMiddleware {
         const middleware = (req: Request, res: Response, next: NextFunction) => {
@@ -189,6 +176,7 @@ class Gateway implements IGateway {
      * Calls createProxyMiddleware based on the type of proxy (http, websocket).
      * Also holds a record to the websocket route in websocketMappings
      * @param config 
+     * @author Utkarsh Srivastava <utkarsh@sagacious.dev>
      */
     private proxy(config: IRouteConfig) {
         if (config.isWebsocket) {
@@ -207,29 +195,19 @@ class Gateway implements IGateway {
      * @param req {Request}
      * @param res {Response}
      * @param next {NextFunction}
+     * @author Utkarsh Srivastava <utkarsh@sagacious.dev>
      */
     private verify(req: Request, res: Response, next: NextFunction) {
         const token = this.extractToken(req)
-        const client = this.extractClient(req)
+        const subject = this.extractSubject(req)
 
-        // If not client id was provided
-        if (!client) {
+        if (!subject) {
             res.sendStatus(401)
-            return
-        }
-
-        // Modified JWT SignOptions
-        // It overrights algorithm to RS256 as that's the only 
-        // algorthim supported. client claim should be passed
-        // Along with the request to verify the claim
-        const jwtSignOptions = {
-            ...this.config.jwtSignOptions,
-            subject: client,
-            algorithm: ["RS256"]
+            return;
         }
 
         if (token) {
-            verify(token, publicKey, jwtSignOptions, (err, decoded) => {
+            this.jwtManager.verify(token, subject, (err, decoded) => {
                 if (err) {
                     let status = 401
                     if (err.message.startsWith("jwt subject invalid"))
@@ -250,16 +228,22 @@ class Gateway implements IGateway {
         else res.status(401).json({ err: "no token was provided" })
     }
 
+
     /**
      * Extract the token from the requeest body
      * Looks into 'Authentication', 'x-auth-token' headers and then into 'token'
      * query parameter as a fallback
-     * @param req {Request}
+     * @param req {Request} Express request object
+     * @returns JWT Token
+     * @author Utkarsh Srivastava <utkarsh@sagacious.dev>
      */
     private extractToken(req: Request): string | undefined {
         // Look for token in Authentication header
         const bearer = req.get("Authorization")
         let token = bearer && bearer.split(" ")[1]; // Bearer <TOKEN HERE>
+
+        // Fallback to cookies
+        if (!token) token = req.cookies["_at"]
 
         // Fallback to x-auth-token header
         if (!token) token = req.get("x-auth-token")
@@ -271,12 +255,13 @@ class Gateway implements IGateway {
     }
 
     /**
-     * Extracts the client id from the header
-     * @param req {Request}
+     * Extracts the subject from the header
+     * @param req {Request} Express request object
+     * @author Utkarsh Srivastava <utkarsh@sagacious.dev>
      */
-    private extractClient(req: Request): string | undefined {
+    private extractSubject(req: Request): string | undefined {
         // Extract subject from the x-auth-subject header
-        return req.get("x-auth-client")
+        return req.get("x-auth-subject")
     }
 }
 
