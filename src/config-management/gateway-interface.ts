@@ -3,6 +3,8 @@
  * @author Utkarsh Srivastava <utkarsh@sagacious.dev>
  */
 
+import { Algorithm } from "jsonwebtoken";
+
 export type AccessLevel = 'admin' | 'open';
 export type HTTPMethod = 'POST' | 'GET' | 'PUT' | 'PATCH' | 'DELETE' | 'OPTIONS';
 
@@ -28,11 +30,11 @@ export interface IExceptionRoute {
 
 export interface IGatewayConfig {
     routes: Array<IRouteConfig>;
-    jwtSignOptions: {
+    jwtVerifyOptions: {
         issuer?: string;
         subject?: string;
         audience?: string;
         expiresIn?: string;
-        algorithm?: Array<string>;
+        algorithms?: Array<Algorithm>;
     }
 }

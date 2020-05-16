@@ -6,7 +6,7 @@
             "accessType": "open"
         }
     ],
-    "jwtSignOptions": {
+    "jwtVerifyOptions": {
         "issuer": "Sagacious Dev",
         "audience": "https://sagacious.dev",
         "expiresIn": "30m"
