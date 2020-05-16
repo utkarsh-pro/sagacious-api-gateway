@@ -6,5 +6,4 @@ src/config-management/keys/production
 .gitignore
 config.production.json
 config.development.json
-testServer.js
 *.http
