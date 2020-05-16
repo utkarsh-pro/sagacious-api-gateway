@@ -1,8 +1,8 @@
 import 'mocha'
 import chai from 'chai'
 import chaiHTTP from 'chai-http'
-import { fork } from 'child_process'
-import path, { join } from 'path'
+import { join } from 'path'
+import nock from 'nock'
 
 import { sign } from 'jsonwebtoken'
 import app from '../index'
@@ -41,8 +41,11 @@ const privateKey = readFileSync(join(__dirname, "..", "key-management", "keys", 
 // Generate temporary token
 const token = sign(DummyUser, privateKey, { ...jwtSignOptions, algorithm: "RS256" })
 
-// Spin the test server
-const proc = fork(path.join(__dirname, "dummy-server.js"))
+// Nock for http request
+const scope = nock("http://localhost:9000")
+    .persist()
+    .get(/\/api/)
+    .reply(200, { userID: 1, task: "Do testing" })
 
 describe('Proxy routes integration test', () => {
     describe("GET /api", () => {
@@ -119,7 +122,7 @@ describe('Proxy routes integration test', () => {
     })
 
     after(() => {
-        // Kill the temporary process after running all the test
-        proc.kill("SIGTERM")
+        // Remove the mocker server
+        scope.persist(false)
     })
 })
