@@ -1,11 +1,12 @@
 {
   "name": "api-gateway",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Minimal API gateway for sagacious.dev",
   "main": "build/index.js",
   "scripts": {
     "test": "cross-env NODE_ENV=development mocha -r ts-node/register src/**/*.test.ts",
     "dev": "cross-env NODE_ENV=development nodemon",
+    "profiler": "cross-env NODE_ENV=development node --inspect -r ts-node/register",
     "build": "tsc",
     "postbuild": "cpy --cwd=src --parents '**/*.json' ../build/",
     "start": "cross-env NODE_ENV=production node ."
