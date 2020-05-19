@@ -24,9 +24,9 @@ export class CleanupManager implements ICleanupManager {
     private inProcess: boolean = false;
 
     constructor() {
-        process.once("exit", this.gracefulShutdown)
-        process.once("SIGTERM", this.gracefulShutdown)
-        process.once("SIGINT", this.gracefulShutdown)
+        process.once("exit", this.gracefulShutdown.bind(this))
+        process.once("SIGTERM", this.gracefulShutdown.bind(this))
+        process.once("SIGINT", this.gracefulShutdown.bind(this))
     }
 
     /**
