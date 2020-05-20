@@ -15,7 +15,8 @@ const DummyUser: IUser = {
     id: "rwerwjkfhwer32089230",
     email: "test@test.com",
     roles: ["RETREIVE_INFO"],
-    accessLevel: "open"
+    accessLevel: "open",
+    machineID: "testmachine"
 }
 
 // Dummy JWT signoptions
@@ -43,9 +44,12 @@ const privateKey = readFileSync(join(__dirname, "..", "key-management", "keys", 
 const token = sign(DummyUser, privateKey, jwtSignOptions)
 
 // JWTManager
-const jwtmanager = new JWTManager(jwtVerifyOptions)
-
+let jwtmanager: JWTManager;
 describe('JWTManager class', () => {
+    before(() => {
+        jwtmanager = new JWTManager(jwtVerifyOptions)
+    })
+
     describe("verify method", () => {
         it("should throw error when subject is invalid", (done) => {
             jwtmanager.verify(token, "randomsubject", (err, decoded) => {
@@ -73,6 +77,7 @@ describe('JWTManager class', () => {
                 expect(d.name).to.equal(DummyUser.name)
                 expect(d.id).to.equal(DummyUser.id)
                 expect(d.email).to.equal(DummyUser.email)
+                expect(d.machineID).to.equal(DummyUser.machineID)
                 expect(d.accessLevel).to.equal(DummyUser.accessLevel)
                 done()
             })

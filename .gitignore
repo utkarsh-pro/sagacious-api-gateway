@@ -5,3 +5,4 @@ src/config-management/keys/production
 config.production.json
 *.http
 logs
+profiler.ts

@@ -22,7 +22,8 @@ const DummyUser: IUser = {
     id: "rwerwjkfhwer32089230",
     email: "test@test.com",
     roles: ["RETREIVE_INFO"],
-    accessLevel: "open"
+    accessLevel: "open",
+    machineID: "testmachine"
 }
 
 // Dummy JWT signoptions

@@ -24,6 +24,7 @@ export interface IUser {
     name: string;
     id: string;
     email: string;
+    machineID: string;
     accessLevel: AccessLevel;
     roles: Array<string>;
 }
