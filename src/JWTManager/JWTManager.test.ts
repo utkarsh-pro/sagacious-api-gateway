@@ -67,6 +67,17 @@ describe('JWTManager class', () => {
             })
         })
 
+        it("should throw error when token is valid but machine id is revoked", done => {
+            jwtmanager.storage.set(DummyUser.machineID, DummyUser.machineID)
+            jwtmanager.verify(token, jwtSignOptions.subject, (err, _) => {
+                expect(err).to.be.an.instanceOf(JsonWebTokenError)
+
+                // Remove the machine id now
+                jwtmanager.storage.remove(DummyUser.machineID)
+                done()
+            })
+        })
+
         it("should run successfully when token and subject are correct", (done) => {
             jwtmanager.verify(token, jwtSignOptions.subject, (err, decoded) => {
                 expect(err).to.be.null;
