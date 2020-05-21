@@ -148,7 +148,7 @@ class Gateway implements IGateway {
 
     /**
      * Creates a middleware for authorizing the requests
-     * @param config {IRouteConfig}
+     * @param config
      * @author Utkarsh Srivastava <utkarsh@sagacious.dev>
      */
     private authorize(config: IRouteConfig): ExpressMiddleware {
@@ -193,9 +193,9 @@ class Gateway implements IGateway {
      * Verifies if the given token is valid JWT or not.
      * Also sets up the header 'user' with the decoded JWT. No header
      * is set if the token is invalid
-     * @param req {Request}
-     * @param res {Response}
-     * @param next {NextFunction}
+     * @param req
+     * @param res
+     * @param next
      * @author Utkarsh Srivastava <utkarsh@sagacious.dev>
      */
     private verify(req: Request, res: Response, next: NextFunction) {
@@ -234,7 +234,7 @@ class Gateway implements IGateway {
      * Extract the token from the requeest body
      * Looks into 'Authentication', 'x-auth-token' headers and then into 'token'
      * query parameter as a fallback
-     * @param req {Request} Express request object
+     * @param req Express request object
      * @returns JWT Token
      * @author Utkarsh Srivastava <utkarsh@sagacious.dev>
      */
