@@ -1,6 +1,6 @@
 {
   "name": "api-gateway",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Minimal API gateway for sagacious.dev",
   "main": "build/index.js",
   "scripts": {
