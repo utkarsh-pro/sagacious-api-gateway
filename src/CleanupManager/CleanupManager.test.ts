@@ -25,7 +25,7 @@ let attached: string, detached: string, unsubscribed: string;
 
 describe('CleanupManager Class', () => {
     before(async function () {
-        this.timeout(5000);
+        this.timeout(10 * 1000);
         [attached, detached, unsubscribed] = await Promise.all([
             subprocess("attach.ts"),
             subprocess("detach.ts"),

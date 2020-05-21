@@ -5,7 +5,7 @@ import { join } from 'path'
 import nock from 'nock'
 
 import { sign } from 'jsonwebtoken'
-import app from '../index'
+import app, { gateway } from '../index'
 import { IUser } from './Gateway'
 import config from '../config-management/gateway-config'
 import { readFileSync } from 'fs'
@@ -59,8 +59,24 @@ describe('Proxy routes integration test', () => {
             }
         })
 
-        it("should send status 200 when token is passed in 'Authorization' header", async () => {
+        it("should send status 401 when a token is perfectly valid but is revoked", async () => {
+            // Add machine ID to be revoked list
+            gateway.jwtManager.storage.set(DummyUser.machineID, {})
+            try {
+                const res = await chai.request(app)
+                    .get("/api")
+                    .set("Authorization", `Bearer ${token}`)
+                    .set("x-auth-subject", DummyUser.id)
+                    .send()
+                // Remove the key now
+                gateway.jwtManager.storage.remove(DummyUser.machineID)
+                expect(res).to.have.status(401)
+            } catch (error) {
+                throw error
+            }
+        })
 
+        it("should send status 200 when token is passed in 'Authorization' header", async () => {
             try {
                 const res = await chai.request(app)
                     .get("/api")
